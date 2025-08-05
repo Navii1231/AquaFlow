@@ -1,5 +1,5 @@
 #include "Core/Aqpch.h"
-#include "MaterialSystem/MaterialInstance.h"
+#include "Material/MaterialInstance.h"
 
 void AQUA_NAMESPACE::MaterialInstance::UpdateShaderParBuffer()
 {

@@ -82,7 +82,6 @@ struct RendererConfig
 	vkLib::Framebuffer mShadingbuffer;
 
 	RenderTargetFactory mRenderCtxFactory;
-	RenderTargetFactory mHSTargetCtx;
 
 	vkLib::Core::Ref<vk::Sampler> mShadingSampler;
 	vkLib::Core::Ref<vk::Sampler> mDepthSampler;
@@ -203,7 +202,6 @@ void AQUA_NAMESPACE::Renderer::SetCtx(vkLib::Context ctx)
 
 	SetupFeatureInfos();
 	SetupVertexFactory();
-	SetupHSTargetCtx();
 	SetupHSVFactories();
 
 	mConfig->mCamera = mConfig->mResourcePool.CreateBuffer<CameraInfo>(vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostCoherent);
@@ -221,7 +219,6 @@ void AQUA_NAMESPACE::Renderer::SetCtx(vkLib::Context ctx)
 	mConfig->mDepthSampler = mConfig->mResourcePool.CreateSampler(depthSamplerInfo);
 
 	mConfig->mMaterialSystem.SetCtx(ctx);
-	mConfig->mMaterialSystem.SetHyperSurfaceRenderFactory(mConfig->mHSTargetCtx);
 }
 
 void AQUA_NAMESPACE::Renderer::EnableFeatures(RendererFeatureFlags flags)
@@ -280,6 +277,8 @@ void AQUA_NAMESPACE::Renderer::SetCamera(const glm::mat4& projection, const glm:
 
 void AQUA_NAMESPACE::Renderer::PrepareFeatures()
 {
+	mConfig->mMaterialSystem.SetHyperSurfRenderCtx(mConfig->mShadingbuffer.GetParentContext());
+
 	mConfig->mEnv->Update();
 
 	mConfig->mFrontEnd.PrepareFramebuffers(mConfig->mShadingbuffer.GetResolution());
@@ -357,6 +356,7 @@ void AQUA_NAMESPACE::Renderer::SubmitRenderable(const std::string& name, const g
 				ExecuteMaterial(buffer, op, materialIdx);
 			}, [config, instance](const EXEC_NAMESPACE::Operation& op)
 				{
+					op.GFX->SetClearColorValues(0.0f, { 0.0f, 1.0f, 0.0f, 1.0f });
 					op.GFX->SetClearDepthStencilValues(1.0f, 0);
 					instance.UpdateDescriptors();
 				});
@@ -373,7 +373,8 @@ void AQUA_NAMESPACE::Renderer::SubmitRenderable(const std::string& name, const g
 	SubmitRenderable(name, model, renderable, instance);
 }
 
-void AQUA_NAMESPACE::Renderer::SubmitLines(const std::string& lineIsland, const vk::ArrayProxy<Line>& lines)
+void AQUA_NAMESPACE::Renderer::SubmitLines(const std::string& lineIsland, 
+	const vk::ArrayProxy<Line>& lines, float thickness /*= 2.0f*/)
 {
 	auto config = mConfig;
 
@@ -401,16 +402,17 @@ void AQUA_NAMESPACE::Renderer::SubmitLines(const std::string& lineIsland, const 
 	auto found = FindMaterialInstance(lineMaterial, config);
 
 	if (found == mConfig->mMaterials.end())
-		InsertMaterial(lineMaterial, [this](vk::CommandBuffer buffer, const EXEC_NAMESPACE::Operation& op)
+		InsertMaterial(lineMaterial, [this, thickness](vk::CommandBuffer buffer, const EXEC_NAMESPACE::Operation& op)
 			{
-				ExecuteLineMaterial(op, buffer);
+				ExecuteLineMaterial(op, buffer, thickness);
 			}, [this](const EXEC_NAMESPACE::Operation& op)
 				{
 					UpdateLineMaterial(op);
 				});
 }
 
-void AQUA_NAMESPACE::Renderer::SubmitCurves(const std::string& curveIsland, const vk::ArrayProxy<Curve>& connections)
+void AQUA_NAMESPACE::Renderer::SubmitCurves(const std::string& curveIsland, 
+	const vk::ArrayProxy<Curve>& connections, float thickness /*= 2.0f*/)
 {
 	auto config = mConfig;
 
@@ -457,16 +459,17 @@ void AQUA_NAMESPACE::Renderer::SubmitCurves(const std::string& curveIsland, cons
 	auto found = FindMaterialInstance(lineMaterial, config);
 
 	if (found == mConfig->mMaterials.end())
-		InsertMaterial(lineMaterial, [this](vk::CommandBuffer buffer, const EXEC_NAMESPACE::Operation& op)
+		InsertMaterial(lineMaterial, [this, thickness](vk::CommandBuffer buffer, const EXEC_NAMESPACE::Operation& op)
 			{
-				ExecuteLineMaterial(op, buffer);
+				ExecuteLineMaterial(op, buffer, thickness);
 			}, [this](const EXEC_NAMESPACE::Operation& op)
 				{
 					UpdateLineMaterial(op);
 				});
 }
 
-void AQUA_NAMESPACE::Renderer::SubmitBezierCurves(const std::string& curveIsland, const vk::ArrayProxy<Curve>& curves)
+void AQUA_NAMESPACE::Renderer::SubmitBezierCurves(const std::string& curveIsland, 
+	const vk::ArrayProxy<Curve>& curves, float thickness /*= 2.0f*/)
 {
 	std::vector<Curve> basicCurves;
 	basicCurves.reserve(curves.size());
@@ -478,10 +481,9 @@ void AQUA_NAMESPACE::Renderer::SubmitBezierCurves(const std::string& curveIsland
 
 		thisCurve.Points = curveSolver.Solve();
 		thisCurve.Color = curve.Color;
-		thisCurve.Thickness = curve.Thickness;
 	}
 
-	SubmitCurves(curveIsland, basicCurves);
+	SubmitCurves(curveIsland, basicCurves, thickness);
 }
 
 void AQUA_NAMESPACE::Renderer::RemoveRenderable(const std::string& name)
@@ -699,6 +701,8 @@ void AQUA_NAMESPACE::Renderer::UpdateLineMaterial(const EXEC_NAMESPACE::Operatio
 
 	hsLinePipeline.UpdateDescriptor({ 0, 0, 0 }, writeInfo);
 
+	hsLinePipeline.SetClearColorValues(0, { 0.0f, 1.0f, 1.0f, 1.0f });
+
 	hsLinePipeline.SetVertexBuffer(0, mConfig->mHSVLinesFactory[TEMPLATE_POINT]);
 
 	hsLinePipeline.SetScissor(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(resolution.x, resolution.y)));
@@ -878,8 +882,13 @@ void AQUA_NAMESPACE::Renderer::PrepareShadingNetwork()
 	for (const auto& rawMaterial : mConfig->mMaterials)
 	{
 		std::string instanceName = materialPrefix + std::to_string(materialIdx++);
+		std::string nextInstance = materialPrefix + std::to_string(materialIdx);
+
 		mConfig->mRenderGraphBuilder[instanceName] = rawMaterial.Op;
 		mConfig->mRenderGraphBuilder[instanceName].OpID = RendererConfig::sMatTypeID;
+
+		if(materialIdx < mConfig->mMaterials.size())
+			mConfig->mRenderGraphBuilder.InsertDependency(instanceName, nextInstance, vk::PipelineStageFlagBits::eTopOfPipe);
 
 		mConfig->mRenderGraphBuilder.InsertDependency("GBufferStage", instanceName);
 		mConfig->mRenderGraphBuilder.InsertDependency(instanceName, "SkyboxStage");
@@ -1127,13 +1136,15 @@ void AQUA_NAMESPACE::Renderer::ExecuteMaterial(vk::CommandBuffer buffer, const E
 	pipeline.End();
 }
 
-void AQUA_NAMESPACE::Renderer::ExecuteLineMaterial(const EXEC_NAMESPACE::Operation& op, vk::CommandBuffer buffer)
+void AQUA_NAMESPACE::Renderer::ExecuteLineMaterial(const EXEC_NAMESPACE::Operation& op, 
+	vk::CommandBuffer buffer, float thickness /*= 2.0f*/)
 {
 	EXEC_NAMESPACE::Executioner executioner(buffer, op);
 
 	auto& hsLinePipeline = *op.GFX;
 
 	hsLinePipeline.SetFramebuffer(mConfig->mShadingbuffer);
+	hsLinePipeline.SetLineWidth(thickness);
 
 	hsLinePipeline.Begin(buffer);
 	hsLinePipeline.Activate();
@@ -1257,24 +1268,6 @@ uint32_t AQUA_NAMESPACE::Renderer::CalculateActiveHSPVertexCount()
 	}
 
 	return vertexCount;
-}
-
-void AQUA_NAMESPACE::Renderer::SetupHSTargetCtx()
-{
-	auto& renderFac = mConfig->mHSTargetCtx;
-
-	renderFac.SetContextBuilder(mConfig->mCtx.FetchRenderContextBuilder(vk::PipelineBindPoint::eGraphics));
-
-	renderFac.SetAllColorProperties(vk::AttachmentLoadOp::eLoad,
-		vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled);
-
-	renderFac.SetDepthProperties(vk::AttachmentLoadOp::eLoad,
-		vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled);
-
-	renderFac.AddColorAttribute("Color", "RGBA32F");
-	renderFac.SetDepthAttribute("Depth", "D24Un_S8U");
-
-	_STL_VERIFY(renderFac.Validate(), "invalid render factory");
 }
 
 void AQUA_NAMESPACE::Renderer::SetupHSVFactories()

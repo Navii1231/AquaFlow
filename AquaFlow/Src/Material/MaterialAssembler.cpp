@@ -1,5 +1,5 @@
 #include "Core/Aqpch.h"
-#include "MaterialSystem/MaterialAssembler.h"
+#include "Material/MaterialAssembler.h"
 #include "../Utils/CompilerErrorChecker.h"
 
 std::string AQUA_NAMESPACE::MAT_NAMESPACE::MaterialAssembler::sDeferGFXVertexShader = R"(

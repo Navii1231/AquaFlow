@@ -1,5 +1,5 @@
 #include "Core/Aqpch.h"
-#include "MaterialSystem/MaterialBuilder.h"
+#include "Material/MaterialBuilder.h"
 
 std::unordered_map<std::string, uint32_t> AQUA_NAMESPACE::MaterialBuilder::sGLSLTypeToSize =
 {

@@ -21,7 +21,7 @@ vkLib::GraphicsPipelineConfig AQUA_NAMESPACE::HyperSurfacePipeline::SetupConfig(
 	
 	config.VertexInput.Bindings.emplace_back(0, static_cast<uint32_t>(2 * sizeof(glm::vec4)), vk::VertexInputRate::eVertex);
 	config.VertexInput.Attributes.emplace_back(0, 0, vk::Format::eR32G32B32A32Sfloat, 0);
-	config.VertexInput.Attributes.emplace_back(1, 0, vk::Format::eR32G32B32A32Sfloat, static_cast<uint32_t>(sizeof(glm::vec3)));
+	config.VertexInput.Attributes.emplace_back(1, 0, vk::Format::eR32G32B32A32Sfloat, static_cast<uint32_t>(sizeof(glm::vec4)));
 
 	config.Rasterizer.CullMode = vk::CullModeFlagBits::eNone;
 	config.Rasterizer.FrontFace = vk::FrontFace::eClockwise;

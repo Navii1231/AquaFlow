@@ -22,6 +22,8 @@ struct MaterialSystemConfig
 	HyperSurfacePipeline mPointPipeline;
 	HyperSurfacePipeline mLinePipeline;
 
+	vkLib::RenderTargetContext mTargetCtx;
+
 	RenderTargetFactory mHyperSurfaceCtxFactory;
 	vkLib::RenderContextBuilder mRenderCtxBuilder;
 
@@ -59,13 +61,15 @@ void AQUA_NAMESPACE::MaterialSystem::SetShaderDirectory(const std::string& direc
 	BuildSparePipelines();
 }
 
-void AQUA_NAMESPACE::MaterialSystem::SetHyperSurfaceRenderFactory(RenderTargetFactory factory)
+void AQUA_NAMESPACE::MaterialSystem::SetHyperSurfRenderCtx(vkLib::RenderTargetContext rCtx)
 {
-	mConfig->mHyperSurfaceCtxFactory = factory;
-	mConfig->mHyperSurfaceCtxFactory.SetContextBuilder(mConfig->mRenderCtxBuilder);
+	mConfig->mTargetCtx = rCtx;
+	BuildSparePipelines();
+}
 
-	_STL_VERIFY(mConfig->mHyperSurfaceCtxFactory.Validate(), "invalid render context");
-
+void AQUA_NAMESPACE::MaterialSystem::SetDefaultHyperSurfRenderCtx()
+{
+	mConfig->mTargetCtx = mConfig->mHyperSurfaceCtxFactory.GetContext();
 	BuildSparePipelines();
 }
 
@@ -115,6 +119,8 @@ void AQUA_NAMESPACE::MaterialSystem::SetupDefaultRenderFactory()
 
 	// preparing the render factory; it holds the render context
 	_STL_VERIFY(renderFac.Validate(), "invalid render context");
+
+	mConfig->mTargetCtx = renderFac.GetContext();
 }
 
 void AQUA_NAMESPACE::MaterialSystem::InitInstance(MaterialTemplate& temp, MaterialInstance& instance) const
