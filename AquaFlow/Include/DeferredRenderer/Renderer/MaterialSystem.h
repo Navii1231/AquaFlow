@@ -19,7 +19,8 @@ public:
 
 	void SetShaderDirectory(const std::string& shaders);
 
-	void SetHyperSurfaceRenderFactory(RenderTargetFactory factory);
+	void SetHyperSurfRenderCtx(vkLib::RenderTargetContext rCtx);
+	void SetDefaultHyperSurfRenderCtx();
 	void SetCtx(vkLib::Context ctx);
 
 	// builds and caches a material one

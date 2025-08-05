@@ -1,6 +1,6 @@
 #pragma once
 #include "MemoryConfig.h"
-#include "Buffer.h"
+#include "GenericBuffer.h"
 #include "Image.h"
 #include "../Process/Commands.h"
 
@@ -11,10 +11,11 @@ class ResourcePool
 public:
 	ResourcePool() = default;
 
-	template <typename T>
-	Buffer<T> CreateBuffer(vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memProps) const;
+	template <typename T, typename ...Properties>
+	Buffer<T> CreateBuffer(Properties&&... properties) const;
 
-	GenericBuffer CreateGenericBuffer(vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memProps) const;
+	template <typename ...Properties>
+	GenericBuffer CreateGenericBuffer(Properties&&... properties) const;
 
 	Image CreateImage(const ImageCreateInfo& info) const;
 
@@ -38,9 +39,8 @@ private:
 	friend class Context;
 };
 
-template <typename T>
-VK_NAMESPACE::Buffer<T> VK_NAMESPACE::ResourcePool::CreateBuffer(
-	vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memProps) const
+template <typename T, typename ...Properties>
+VK_NAMESPACE::Buffer<T> VK_NAMESPACE::ResourcePool::CreateBuffer(Properties&&... props) const
 {
 	auto Device = mDevice;
 
@@ -50,16 +50,10 @@ VK_NAMESPACE::Buffer<T> VK_NAMESPACE::ResourcePool::CreateBuffer(
 	Config.ElemCount = 0;
 	Config.LogicalDevice = *Device;
 	Config.PhysicalDevice = mPhysicalDevice.Handle;
-
-	Config.Usage = usage | vk::BufferUsageFlagBits::eTransferDst |
-		vk::BufferUsageFlagBits::eTransferSrc;
-
-	Config.MemProps = memProps;
 	Config.TypeSize = sizeof(T);
 
 	// Creating an empty buffer
-	Chunk.BufferHandles = Core::CreateRef(vkLib::Core::Buffer(),
-		[Device](Core::Buffer buffer)
+	Chunk.BufferHandles = Core::CreateRef(vkLib::Core::Buffer(), [Device](Core::Buffer buffer)
 	{
 		if (buffer.Handle)
 		{
@@ -71,13 +65,22 @@ VK_NAMESPACE::Buffer<T> VK_NAMESPACE::ResourcePool::CreateBuffer(
 	Chunk.Device = Device;
 	Chunk.BufferHandles->Config = Config;
 
+	(Chunk.BufferHandles->SetProperty(std::forward<Properties>(props)),...);
+
 	Buffer<T> buffer(std::move(Chunk));
 	buffer.mQueueManager = GetQueueManager();
 	buffer.mCommandPools = mBufferCommandPools;
 
-	buffer.Reserve(1);
+	buffer.Reserve(Chunk.BufferHandles->ElemCount == 0 ? 1 : Chunk.BufferHandles->ElemCount);
+	buffer.Resize(Chunk.BufferHandles->ElemCount);
 
 	return buffer;
+}
+
+template <typename... Properties>
+VK_NAMESPACE::GenericBuffer VK_NAMESPACE::ResourcePool::CreateGenericBuffer(Properties&&... props) const
+{
+	return CreateBuffer<GenericBuffer::Type>(std::forward<Properties>(props)...);
 }
 
 VK_END

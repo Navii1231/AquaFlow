@@ -15,6 +15,7 @@ class Executor;
 
 VK_CORE_END
 
+// should be inside the core, it's not directly visible to the client
 class QueueManager
 {
 public:

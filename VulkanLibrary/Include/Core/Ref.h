@@ -53,9 +53,7 @@ public:
 
 	// Sets a new payload and deletes the existing one
 	void SetValue(const T& handle);
-
 	void ReplaceValue(const T& handle);
-
 
 	void Reset();
 	

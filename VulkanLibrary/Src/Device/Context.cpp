@@ -58,6 +58,7 @@ VK_NAMESPACE::Context::Context(const ContextCreateInfo& info)
 VK_NAMESPACE::Core::Ref<vk::Semaphore> VK_NAMESPACE::Context::CreateSemaphore() const
 {
 	auto Device = mHandle;
+
 	return Core::CreateRef(Core::Utils::CreateSemaphore(*mHandle), 
 		[Device](vk::Semaphore semaphore) { Device->destroySemaphore(semaphore); });
 }
@@ -70,14 +71,27 @@ VK_NAMESPACE::Core::Ref<vk::Fence> VK_NAMESPACE::Context::CreateFence(bool Signa
 		[Device](vk::Fence fence) { Device->destroyFence(fence); });
 }
 
-void VK_NAMESPACE::Context::ResetFence(Core::Ref<vk::Fence> Fence)
+VK_NAMESPACE::Core::Ref<vk::Event> VK_NAMESPACE::Context::CreateEvent() const
 {
-	mHandle->resetFences(*Fence);
+	auto Device = mHandle;
+
+	return Core::CreateRef(Core::Utils::CreateEvent(*mHandle),
+		[Device](vk::Event event_) {Device->destroyEvent(event_); });
 }
 
-void VK_NAMESPACE::Context::WaitForFence(Core::Ref<vk::Fence> fence, uint64_t timeout /*= UINT64_MAX*/)
+void VK_NAMESPACE::Context::ResetFence(vk::Fence Fence)
 {
-	vk::Result Temp = mHandle->waitForFences(*fence, VK_TRUE, timeout);
+	mHandle->resetFences(Fence);
+}
+
+void VK_NAMESPACE::Context::ResetEvent(vk::Event Event)
+{
+	mHandle->resetEvent(Event);
+}
+
+void VK_NAMESPACE::Context::WaitForFence(vk::Fence fence, uint64_t timeout /*= UINT64_MAX*/)
+{
+	vk::Result Temp = mHandle->waitForFences(fence, VK_TRUE, timeout);
 }
 
 VK_NAMESPACE::CommandPools VK_NAMESPACE::Context::CreateCommandPools(

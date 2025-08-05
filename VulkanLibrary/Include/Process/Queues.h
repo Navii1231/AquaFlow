@@ -31,6 +31,8 @@ public:
 	vk::Result PresentKHR(const vk::PresentInfoKHR& presentInfo) const;
 	bool WaitIdle(std::chrono::nanoseconds timeOut = std::chrono::nanoseconds::max()) const;
 
+	void ResetFence() const;
+
 	QueueFamily* GetQueueFamilyInfo() const { return mFamilyInfo; }
 	uint32_t GetQueueIndex() const { return mQueueIndex; }
 

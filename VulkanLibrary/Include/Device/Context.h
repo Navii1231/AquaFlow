@@ -28,9 +28,11 @@ public:
 	// Sync stuff...
 	Core::Ref<vk::Semaphore> CreateSemaphore() const;
 	Core::Ref<vk::Fence> CreateFence(bool Signaled = true) const;
+	Core::Ref<vk::Event> CreateEvent() const;
 
-	void ResetFence(Core::Ref<vk::Fence> Fence);
-	void WaitForFence(Core::Ref<vk::Fence> fence, uint64_t timeout = UINT64_MAX);
+	void ResetFence(vk::Fence Fence);
+	void ResetEvent(vk::Event Event);
+	void WaitForFence(vk::Fence fence, uint64_t timeout = UINT64_MAX);
 
 	template <typename It> 
 	void WaitForFencesRange(It Begin, It End, uint64_t timeout = UINT64_MAX);

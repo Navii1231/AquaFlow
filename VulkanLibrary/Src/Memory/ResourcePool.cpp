@@ -1,12 +1,6 @@
 #include "Core/vkpch.h"
 #include "Memory/ResourcePool.h"
 
-VK_NAMESPACE::GenericBuffer VK_NAMESPACE::ResourcePool::CreateGenericBuffer(
-	vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memProps) const
-{
-	return CreateBuffer<GenericBuffer::Type>(usage, memProps);
-}
-
 VK_NAMESPACE::Image VK_NAMESPACE::ResourcePool::CreateImage(const ImageCreateInfo& info) const
 {
 	auto Device = mDevice;
@@ -20,8 +14,7 @@ VK_NAMESPACE::Image VK_NAMESPACE::ResourcePool::CreateImage(const ImageCreateInf
 	config.Tiling = info.Tiling;
 	config.Type = info.Type;
 	config.MemProps = info.MemProps;
-	config.Usage = info.Usage | vk::ImageUsageFlagBits::eTransferSrc
-		| vk::ImageUsageFlagBits::eTransferDst;
+	config.Usage = info.Usage | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
 
 	Core::Image Handles = Core::Utils::CreateImage(config);
 

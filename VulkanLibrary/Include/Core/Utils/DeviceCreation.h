@@ -42,6 +42,7 @@ vk::Flags<VulkanFlagBits> ChainFlagsTogether(const std::set<VulkanFlagBits>& fla
 // Sync Stuff...
 vk::Semaphore CreateSemaphore(vk::Device device);
 vk::Fence CreateFence(vk::Device device, bool Signaled);
+vk::Event CreateEvent(vk::Device device);
 
 VK_UTILS_END
 VK_CORE_END

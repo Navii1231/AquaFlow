@@ -54,6 +54,12 @@ struct Buffer
 	size_t ElemCount = 0;
 
 	BufferConfig Config{};
+
+	void SetProperty(vk::BufferUsageFlags flags)
+	{ Config.Usage = flags | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc; }
+
+	void SetProperty(size_t elemCount) { ElemCount = elemCount; }
+	void SetProperty(vk::MemoryPropertyFlags flags) { Config.MemProps = flags; }
 };
 
 struct BufferOwnershipTransferInfo

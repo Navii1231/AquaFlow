@@ -1,5 +1,5 @@
 #include "Core/vkpch.h"
-#include "Memory/Buffer.h"
+#include "Memory/GenericBuffer.h"
 
 void VK_NAMESPACE::Buffer<bool>::UnmapMemory() const
 {
@@ -184,6 +184,6 @@ void VK_NAMESPACE::Buffer<bool>::MakeHollow()
 
 void VK_NAMESPACE::Buffer<bool>::ShrinkToFit()
 {
-	if(mChunk.BufferHandles->ElemCount != mChunk.BufferHandles->Config.ElemCount)
+	if (mChunk.BufferHandles->ElemCount != mChunk.BufferHandles->Config.ElemCount)
 		Resize(mChunk.BufferHandles->ElemCount);
 }

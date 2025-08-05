@@ -5,8 +5,11 @@
 
 AQUA_BEGIN
 
-#define TEMPLATE_POINT    "points"
-#define TEMPLATE_LINE     "lines"
+#define TEMPLATE_POINT            "Points"
+#define TEMPLATE_LINE             "Lines"
+#define TEMPLATE_PBR              "PBR"
+#define TEMPLATE_BLINNPHONG       "BlinnPhong"
+#define TEMPLATE_WIREFRAME        "Wireframe"
 
 // for effective material caching
 struct MaterialTemplate

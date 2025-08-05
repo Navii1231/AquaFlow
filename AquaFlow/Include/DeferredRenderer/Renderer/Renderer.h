@@ -48,9 +48,9 @@ public:
 	// need a different kind of material to render lines
 	// will help us in debugging and visualizing without setting up the renderables
 	// it's a good idea to batch all line, curves and points together and submit them at once
-	void SubmitLines(const std::string& lineIsland, const vk::ArrayProxy<Line>& lines);
-	void SubmitCurves(const std::string& curveIsland, const vk::ArrayProxy<Curve>& connections);
-	void SubmitBezierCurves(const std::string& curveIsland, const vk::ArrayProxy<Curve>& curves);
+	void SubmitLines(const std::string& lineIsland, const vk::ArrayProxy<Line>& lines, float thickness = 1.5f);
+	void SubmitCurves(const std::string& curveIsland, const vk::ArrayProxy<Curve>& connections, float thickness = 1.5f);
+	void SubmitBezierCurves(const std::string& curveIsland, const vk::ArrayProxy<Curve>& curves, float thickness = 1.5f);
 	// we could even render points in the three space
 	void SubmitPoints(const std::string& pointIsland, const vk::ArrayProxy<Point>& points);
 
@@ -105,7 +105,7 @@ private:
 
 	void UpdateMaterialData();
 	void ExecuteMaterial(vk::CommandBuffer buffer, const EXEC_NAMESPACE::Operation& op, uint32_t materialIdx);
-	void ExecuteLineMaterial(const EXEC_NAMESPACE::Operation& op, vk::CommandBuffer buffer);
+	void ExecuteLineMaterial(const EXEC_NAMESPACE::Operation& op, vk::CommandBuffer buffer, float thickness = 2.0f);
 
 	void ResizeCmdBufferPool(size_t newSize);
 	void SetupShaders();
@@ -116,7 +116,6 @@ private:
 	uint32_t CalculateActiveHSLVertexCount();
 	uint32_t CalculateActiveHSPVertexCount();
 
-	void SetupHSTargetCtx();
 	void SetupHSVFactories();
 	vkLib::GenericBuffer CreateHSVBuffer();
 };

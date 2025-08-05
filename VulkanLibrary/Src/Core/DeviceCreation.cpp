@@ -79,3 +79,11 @@ vk::Semaphore VK_NAMESPACE::VK_CORE::VK_UTILS::CreateSemaphore(vk::Device device
 {
 	return device.createSemaphore({});
 }
+
+vk::Event VK_NAMESPACE::VK_CORE::VK_UTILS::CreateEvent(vk::Device device)
+{
+	vk::EventCreateInfo info{};
+	info.setFlags(vk::EventCreateFlagBits::eDeviceOnly);
+
+	return device.createEvent(info);
+}

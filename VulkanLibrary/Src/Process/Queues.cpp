@@ -157,3 +157,8 @@ bool VK_NAMESPACE::VK_CORE::Queue::WaitIdle(std::chrono::nanoseconds timeOut /*=
 
 	return Result == vk::Result::eSuccess;
 }
+
+void VK_NAMESPACE::VK_CORE::Queue::ResetFence() const
+{
+	mDevice.resetFences(mFence);
+}
